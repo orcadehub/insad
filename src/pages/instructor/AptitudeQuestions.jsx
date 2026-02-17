@@ -22,14 +22,20 @@ import {
   MenuItem,
   IconButton,
   Chip,
-  Alert
+  Alert,
+  TablePagination
 } from '@mui/material';
 import { Add, Edit, Delete, Upload } from '@mui/icons-material';
 import { useTheme } from '../../contexts/ThemeContext';
+import { aptitudeService } from '../../services/aptitude/aptitudeService';
+import Tooltip from '@mui/material/Tooltip';
 
 const AptitudeQuestions = () => {
   const { darkMode } = useTheme();
   const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [open, setOpen] = useState(false);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState(null);
@@ -45,10 +51,10 @@ const AptitudeQuestions = () => {
 
   const fetchQuestions = async () => {
     try {
-      // TODO: Implement API call
-      setQuestions([]);
+      const data = await aptitudeService.getAllQuestions();
+      setQuestions(data);
     } catch (error) {
-      console.error('Error fetching questions:', error);
+      toast.error('Error fetching questions');
     }
   };
 
@@ -58,19 +64,22 @@ const AptitudeQuestions = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       if (editingQuestion) {
-        // TODO: Update API call
+        await aptitudeService.updateQuestion(editingQuestion._id, formData);
         toast.success('Question updated successfully!');
       } else {
-        // TODO: Create API call
+        await aptitudeService.createQuestion(formData);
         toast.success('Question created successfully!');
       }
       fetchQuestions();
       setOpen(false);
       resetForm();
     } catch (error) {
-      toast.error('Error saving question: ' + error.message);
+      toast.error('Error saving question');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -93,12 +102,13 @@ const AptitudeQuestions = () => {
   };
 
   const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this question?')) return;
     try {
-      // TODO: Delete API call
+      await aptitudeService.deleteQuestion(id);
       toast.success('Question deleted successfully!');
       fetchQuestions();
     } catch (error) {
-      toast.error('Error deleting question: ' + error.message);
+      toast.error('Error deleting question');
     }
   };
 
@@ -110,16 +120,16 @@ const AptitudeQuestions = () => {
     }
 
     try {
-      const formData = new FormData();
-      formData.append('file', uploadFile);
-      
-      // TODO: Implement bulk upload API call
-      toast.success('Questions uploaded successfully!');
+      const result = await aptitudeService.bulkUpload(uploadFile);
+      toast.success(result.message);
+      if (result.errors) {
+        toast.error(`${result.errors.length} rows had errors`);
+      }
       setBulkUploadOpen(false);
       setUploadFile(null);
       fetchQuestions();
     } catch (error) {
-      toast.error('Error uploading questions: ' + error.message);
+      toast.error('Error uploading questions');
     }
   };
 
@@ -141,14 +151,14 @@ const AptitudeQuestions = () => {
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
+          {/* <Button
             variant="outlined"
             startIcon={<Upload />}
             onClick={() => setBulkUploadOpen(true)}
             sx={{ px: 3, py: 1.5, borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
           >
             Bulk Upload
-          </Button>
+          </Button> */}
           <Button
             variant="contained"
             startIcon={<Add />}
@@ -171,9 +181,48 @@ const AptitudeQuestions = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {questions.map((question) => (
+            {questions.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((question) => (
               <TableRow key={question._id}>
-                <TableCell>{question.question}</TableCell>
+                <TableCell>
+                  <Tooltip 
+                    title={
+                      <Box sx={{ p: 1, maxWidth: 600 }}>
+                        <Typography variant="body1" sx={{ fontWeight: 600, mb: 2 }}>{question.question}</Typography>
+                        <Typography variant="body1" sx={{ mb: 1 }}>Options:</Typography>
+                        {question.options.map((opt, idx) => (
+                          <Typography 
+                            key={idx} 
+                            variant="body1" 
+                            sx={{ 
+                              color: idx === question.correctAnswer ? 'success.light' : 'inherit',
+                              fontWeight: idx === question.correctAnswer ? 600 : 400,
+                              mb: 0.5
+                            }}
+                          >
+                            {idx + 1}. {opt} {idx === question.correctAnswer && '✓'}
+                          </Typography>
+                        ))}
+                        {question.explanation && (
+                          <Typography variant="body1" sx={{ mt: 2, fontStyle: 'italic' }}>
+                            Explanation: {question.explanation}
+                          </Typography>
+                        )}
+                      </Box>
+                    }
+                    arrow
+                    placement="right"
+                    componentsProps={{
+                      tooltip: {
+                        sx: {
+                          fontSize: '1rem',
+                          maxWidth: 650
+                        }
+                      }
+                    }}
+                  >
+                    <span style={{ cursor: 'pointer' }}>{question.question}</span>
+                  </Tooltip>
+                </TableCell>
                 <TableCell>
                   <Chip label={question.topic} size="small" />
                 </TableCell>
@@ -188,14 +237,23 @@ const AptitudeQuestions = () => {
                   <IconButton onClick={() => handleEdit(question)} size="small" color="primary">
                     <Edit fontSize="small" />
                   </IconButton>
-                  <IconButton onClick={() => handleDelete(question._id)} size="small" color="error">
-                    <Delete fontSize="small" />
-                  </IconButton>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25]}
+          component="div"
+          count={questions.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={(e, newPage) => setPage(newPage)}
+          onRowsPerPageChange={(e) => {
+            setRowsPerPage(parseInt(e.target.value, 10));
+            setPage(0);
+          }}
+        />
       </TableContainer>
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
@@ -249,6 +307,19 @@ const AptitudeQuestions = () => {
                 </Select>
               </FormControl>
 
+              <FormControl fullWidth>
+                <InputLabel>Difficulty</InputLabel>
+                <Select
+                  value={formData.difficulty}
+                  onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
+                  required
+                >
+                  <MenuItem value="easy">Easy</MenuItem>
+                  <MenuItem value="medium">Medium</MenuItem>
+                  <MenuItem value="hard">Hard</MenuItem>
+                </Select>
+              </FormControl>
+
               <TextField
                 fullWidth
                 label="Explanation"
@@ -260,9 +331,9 @@ const AptitudeQuestions = () => {
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="contained">
-              {editingQuestion ? 'Update' : 'Create'}
+            <Button onClick={() => setOpen(false)} disabled={loading}>Cancel</Button>
+            <Button type="submit" variant="contained" disabled={loading}>
+              {loading ? 'Saving...' : editingQuestion ? 'Update' : 'Create'}
             </Button>
           </DialogActions>
         </form>
