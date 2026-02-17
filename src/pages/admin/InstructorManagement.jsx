@@ -80,18 +80,22 @@ const InstructorManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      console.log('Submitting instructor data:', formData);
       if (editingInstructor) {
         await instructorService.updateInstructor(editingInstructor._id, formData);
         toast.success('Instructor updated successfully!');
       } else {
-        await instructorService.createInstructor(formData);
+        const result = await instructorService.createInstructor(formData);
+        console.log('Create result:', result);
         toast.success('Instructor created successfully!');
       }
       fetchInstructors();
       setOpen(false);
       resetForm();
     } catch (error) {
-      toast.error('Error saving instructor: ' + error.message);
+      console.error('Error saving instructor:', error);
+      const errorMsg = error.response?.data?.message || error.response?.data?.errors?.[0]?.msg || error.message;
+      toast.error('Error: ' + errorMsg);
     }
   };
 
