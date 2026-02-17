@@ -23,7 +23,8 @@ import {
   IconButton,
   Chip,
   Alert,
-  TablePagination
+  TablePagination,
+  Autocomplete
 } from '@mui/material';
 import { Add, Edit, Delete, Upload } from '@mui/icons-material';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -33,6 +34,7 @@ import Tooltip from '@mui/material/Tooltip';
 const AptitudeQuestions = () => {
   const { darkMode } = useTheme();
   const [questions, setQuestions] = useState([]);
+  const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -58,8 +60,18 @@ const AptitudeQuestions = () => {
     }
   };
 
+  const fetchTopics = async () => {
+    try {
+      const data = await aptitudeService.getAllTopics();
+      setTopics(data);
+    } catch (error) {
+      console.error('Error fetching topics:', error);
+    }
+  };
+
   useEffect(() => {
     fetchQuestions();
+    fetchTopics();
   }, []);
 
   const handleSubmit = async (e) => {
@@ -263,12 +275,20 @@ const AptitudeQuestions = () => {
         <form onSubmit={handleSubmit}>
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <TextField
+              <Autocomplete
                 fullWidth
-                label="Topic"
+                freeSolo
+                options={topics}
                 value={formData.topic}
-                onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
-                required
+                onChange={(e, newValue) => setFormData({ ...formData, topic: newValue || '' })}
+                onInputChange={(e, newValue) => setFormData({ ...formData, topic: newValue })}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Topic"
+                    required
+                  />
+                )}
               />
 
               <TextField

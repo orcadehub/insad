@@ -6,6 +6,11 @@ export const aptitudeService = {
     return response.data;
   },
 
+  getAllTopics: async () => {
+    const response = await api.get('/aptitude-questions/topics');
+    return response.data;
+  },
+
   createQuestion: async (questionData) => {
     const response = await api.post('/aptitude-questions', questionData);
     return response.data;
