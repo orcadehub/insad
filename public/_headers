@@ -1,2 +1,14 @@
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://backend.orcode.in https://api.orcadehub.in http://localhost:4000 http://localhost:5000 ws://localhost:4000 wss://backend.orcode.in; img-src 'self' data: https:; font-src 'self' data:;
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+/*.js
+  Content-Type: application/javascript
+
+/*.jsx
+  Content-Type: application/javascript
+
+/*.css
+  Content-Type: text/css
