@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+.sidebar-transition {
+  transition: all 0.3s ease-in-out;
+}
+
+.card-hover {
+  @apply hover:shadow-lg transition-shadow duration-300;
+}
+
+/* Dark mode styles */
+.dark {
+  background-color: #1a1a1a;
+  color: #ffffff;
+}
+
+.dark .bg-gray-50 {
+  background-color: #2d2d2d;
+}
+
+.dark .bg-white {
+  background-color: #1e1e1e;
+}
+
+.dark .text-gray-800 {
+  color: #e5e5e5;
+}
