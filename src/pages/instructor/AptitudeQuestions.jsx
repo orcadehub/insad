@@ -182,6 +182,20 @@ const AptitudeQuestions = () => {
         </Box>
       </Box>
 
+      {/* Topics Summary */}
+      <Box sx={{ mb: 3, display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+        {topics.filter(topic => questions.some(q => q.topic === topic)).map((topic) => {
+          const count = questions.filter(q => q.topic === topic).length;
+          return (
+            <Chip
+              key={topic}
+              label={`${topic} (${count})`}
+              sx={{ fontSize: '0.9rem', py: 2.5, px: 1 }}
+            />
+          );
+        })}
+      </Box>
+
       <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 2 }}>
         <Table>
           <TableHead>
@@ -278,10 +292,16 @@ const AptitudeQuestions = () => {
               <Autocomplete
                 fullWidth
                 freeSolo
-                options={topics}
+                options={topics.filter(topic => questions.some(q => q.topic === topic))}
                 value={formData.topic}
-                onChange={(e, newValue) => setFormData({ ...formData, topic: newValue || '' })}
-                onInputChange={(e, newValue) => setFormData({ ...formData, topic: newValue })}
+                onChange={(e, newValue) => {
+                  const topicName = typeof newValue === 'string' ? newValue.replace(/\s*\(\d+\)$/, '') : newValue || '';
+                  setFormData({ ...formData, topic: topicName });
+                }}
+                onInputChange={(e, newValue) => {
+                  const topicName = newValue.replace(/\s*\(\d+\)$/, '');
+                  setFormData({ ...formData, topic: topicName });
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
