@@ -227,9 +227,14 @@ const ViewAssessment = () => {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Assessment data:', data);
+        console.log('=== ASSESSMENT DATA ===' );
+        console.log('Full assessment:', data);
+        console.log('Assessment type:', data.type);
+        console.log('Programming questions:', data.questions);
         console.log('Quiz questions:', data.quizQuestions);
+        console.log('Quiz questions length:', data.quizQuestions?.length);
         console.log('Frontend questions:', data.frontendQuestions);
+        console.log('======================');
         setAssessment(data);
       }
     } catch (error) {
@@ -1153,14 +1158,31 @@ const ViewAssessment = () => {
       </Card>
 
       {/* Quiz Questions */}
-      {assessment.type === 'programming' && (
-        <Card sx={{ borderRadius: 4, border: 'none', boxShadow: darkMode ? '0 8px 32px rgba(0,0,0,0.3)' : '0 8px 32px rgba(0,0,0,0.1)' }}>
+      <Card sx={{ borderRadius: 4, border: 'none', boxShadow: darkMode ? '0 8px 32px rgba(0,0,0,0.3)' : '0 8px 32px rgba(0,0,0,0.1)' }}>
         <CardContent sx={{ p: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
             <Typography variant="h5" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center' }}>
               <Quiz sx={{ mr: 2, color: 'secondary.main' }} />
               Quiz Questions ({assessment.quizQuestions?.length || 0})
             </Typography>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => {
+                setAddQuestionOpen(true);
+                setTabValue(1);
+              }}
+              sx={{ 
+                textTransform: 'none',
+                borderRadius: 3,
+                px: 3,
+                py: 1.5,
+                fontWeight: 600,
+                boxShadow: 3
+              }}
+            >
+              Add Quiz Question
+            </Button>
           </Box>
 
           {assessment.quizQuestions?.length > 0 ? (
@@ -1291,7 +1313,6 @@ const ViewAssessment = () => {
           )}
         </CardContent>
       </Card>
-      )}
 
       {/* Delete Question Dialog */}
       <Dialog 

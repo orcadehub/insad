@@ -1,6 +1,6 @@
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Box } from '@mui/material';
-import { Dashboard, Quiz, Assessment, People, BarChart, Business, Code } from '@mui/icons-material';
+import { Dashboard, Quiz, Assessment, People, BarChart, Business, Code, MenuBook } from '@mui/icons-material';
 import { useState, useEffect } from 'react';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
@@ -60,6 +60,10 @@ const InstructorLayout = () => {
     
     if (user.permissions.includes('manage_aptitude_questions')) {
       baseItems.push({ text: 'Aptitude Questions', icon: <Quiz />, path: '/instructor/aptitude' });
+    }
+    
+    if (user.permissions.includes('manage_study_materials')) {
+      baseItems.push({ text: 'Study Materials', icon: <MenuBook />, path: '/instructor/study-materials' });
     }
     
     return baseItems;

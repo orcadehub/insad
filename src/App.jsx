@@ -57,6 +57,8 @@ import InstructorPracticeQuestions from './pages/instructor/PracticeQuestions';
 import CreateFrontendAssessment from './pages/instructor/CreateFrontendAssessment';
 import CreateBackendAssessment from './pages/instructor/CreateBackendAssessment';
 import AptitudeQuestions from './pages/instructor/AptitudeQuestions';
+import StudyMaterials from './pages/instructor/StudyMaterials';
+import StudyMaterialEdit from './pages/instructor/StudyMaterialEdit';
 
 const AppContent = () => {
   const { darkMode } = useTheme();
@@ -147,6 +149,7 @@ const AppContent = () => {
             <Route path="practice" element={<InstructorPracticeManagement />} />
             <Route path="practice/:topicId" element={<InstructorPracticeQuestions />} />
             <Route path="aptitude" element={<AptitudeQuestions />} />
+            <Route path="study-materials" element={<StudyMaterials />} />
             <Route path="students" element={<StudentManagement />} />
             <Route path="batch-selection" element={<BatchSelection />} />
             <Route path="create-quiz" element={<CreateQuiz />} />
@@ -162,6 +165,9 @@ const AppContent = () => {
             <Route path="create-assessment/system-design" element={<div>System Design Assessment - Coming Soon</div>} />
             <Route path="reports" element={<Reports />} />
           </Route>
+          
+          {/* Study Material Edit - No Layout */}
+          <Route path="/instructor/study-materials/:id" element={<ProtectedRoute><StudyMaterialEdit /></ProtectedRoute>} />
           
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/login" replace />} />

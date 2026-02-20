@@ -26,6 +26,12 @@ export const ThemeContextProvider = ({ children }) => {
     }
   }, [darkMode]);
 
+  useEffect(() => {
+    const handleToggle = () => toggleDarkMode();
+    document.addEventListener('toggleTheme', handleToggle);
+    return () => document.removeEventListener('toggleTheme', handleToggle);
+  }, [darkMode]);
+
   const toggleDarkMode = () => setDarkMode(!darkMode);
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 

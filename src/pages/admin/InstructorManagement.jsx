@@ -73,6 +73,7 @@ const InstructorManagement = () => {
     'manage_company_specific',
     'manage_practice_questions',
     'manage_aptitude_questions',
+    'manage_study_materials',
     'manage_students',
     'view_reports'
   ];
