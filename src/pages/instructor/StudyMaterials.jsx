@@ -163,7 +163,7 @@ const StudyMaterials = () => {
                   </Box>
                 </CardContent>
 
-                <CardActions sx={{ p: 2, pt: 0, gap: 1 }}>
+                <CardActions sx={{ p: 2, pt: 0 }}>
                   <Button 
                     fullWidth
                     variant="contained" 
@@ -172,16 +172,6 @@ const StudyMaterials = () => {
                     sx={{ fontWeight: 600 }}
                   >
                     Edit
-                  </Button>
-                  <Button 
-                    fullWidth
-                    variant="outlined" 
-                    color="error"
-                    startIcon={<Delete />} 
-                    onClick={() => handleDelete(material._id)}
-                    sx={{ fontWeight: 600 }}
-                  >
-                    Delete
                   </Button>
                 </CardActions>
               </Card>

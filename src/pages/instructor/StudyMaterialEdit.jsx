@@ -209,7 +209,7 @@ const StudyMaterialEdit = () => {
 
       <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
         <Box sx={{ 
-          width: 300, 
+          width: 400, 
           bgcolor: darkMode ? '#1e293b' : 'white', 
           borderRight: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`, 
           display: 'flex', 
@@ -224,17 +224,19 @@ const StudyMaterialEdit = () => {
               size="small"
               label="Category"
               value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               fullWidth
               sx={{ mb: 2 }}
+              disabled
+              InputProps={{ readOnly: true }}
             />
             <TextField
               size="small"
               label="Duration"
               value={formData.estimatedDuration}
-              onChange={(e) => setFormData({ ...formData, estimatedDuration: e.target.value })}
               placeholder="e.g., 8 hours"
               fullWidth
+              disabled
+              InputProps={{ readOnly: true }}
             />
           </Box>
 
@@ -243,17 +245,6 @@ const StudyMaterialEdit = () => {
               <Typography variant="overline" sx={{ fontWeight: 700, color: darkMode ? '#94a3b8' : '#64748b', letterSpacing: 1.2 }}>
                 Chapters
               </Typography>
-              <IconButton 
-                size="small" 
-                onClick={addChapter} 
-                sx={{ 
-                  bgcolor: darkMode ? '#3b82f6' : '#1976d2',
-                  color: 'white',
-                  '&:hover': { bgcolor: darkMode ? '#2563eb' : '#1565c0' }
-                }}
-              >
-                <Add fontSize="small" />
-              </IconButton>
             </Box>
 
             {formData.chapters.map((chapter, idx) => (
@@ -281,13 +272,6 @@ const StudyMaterialEdit = () => {
                     <Typography variant="body2" sx={{ fontWeight: 600, flexGrow: 1 }}>
                       {chapter.title}
                     </Typography>
-                    <IconButton 
-                      size="small" 
-                      onClick={(e) => { e.stopPropagation(); setDeleteDialog({ open: true, type: 'chapter', index: idx }); }}
-                      sx={{ color: activeChapter === idx ? 'white' : 'inherit' }}
-                    >
-                      <Delete fontSize="small" />
-                    </IconButton>
                   </Box>
                 </Paper>
 
@@ -317,13 +301,6 @@ const StudyMaterialEdit = () => {
                           <Typography variant="caption" sx={{ flexGrow: 1, fontWeight: 500 }}>
                             {lesson.title}
                           </Typography>
-                          <IconButton 
-                            size="small" 
-                            onClick={(e) => { e.stopPropagation(); setDeleteDialog({ open: true, type: 'lesson', index: lIdx }); }}
-                            sx={{ color: activeLesson === lIdx ? 'white' : 'inherit' }}
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
                         </Box>
                       </Paper>
                     ))}
@@ -361,10 +338,11 @@ const StudyMaterialEdit = () => {
                 <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
                   <TextField
                     value={currentChapter.title}
-                    onChange={(e) => updateChapter('title', e.target.value)}
                     placeholder="Chapter Title"
                     size="small"
                     sx={{ width: 320 }}
+                    disabled
+                    InputProps={{ readOnly: true }}
                   />
                   <TextField
                     value={currentLesson.title}
@@ -373,80 +351,6 @@ const StudyMaterialEdit = () => {
                     size="small"
                     sx={{ flexGrow: 1 }}
                   />
-                </Box>
-
-                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-                  <Tooltip title="Add Heading">
-                    <Button 
-                      variant="outlined" 
-                      size="small" 
-                      startIcon={<Title />} 
-                      onClick={() => addContentBlock('heading')}
-                      sx={{ fontWeight: 600 }}
-                    >
-                      Heading
-                    </Button>
-                  </Tooltip>
-                  <Tooltip title="Add Paragraph">
-                    <Button 
-                      variant="outlined" 
-                      size="small" 
-                      startIcon={<TextFields />} 
-                      onClick={() => addContentBlock('paragraph')}
-                      sx={{ fontWeight: 600 }}
-                    >
-                      Paragraph
-                    </Button>
-                  </Tooltip>
-                  <Tooltip title="Add List">
-                    <Button 
-                      variant="outlined" 
-                      size="small" 
-                      startIcon={<FormatListBulleted />} 
-                      onClick={() => addContentBlock('list')}
-                      sx={{ fontWeight: 600 }}
-                    >
-                      List
-                    </Button>
-                  </Tooltip>
-                  <Tooltip title="Add Table">
-                    <Button 
-                      variant="outlined" 
-                      size="small" 
-                      startIcon={<TableChart />} 
-                      onClick={() => addContentBlock('table')}
-                      sx={{ fontWeight: 600 }}
-                    >
-                      Table
-                    </Button>
-                  </Tooltip>
-                  <Tooltip title="Add Image">
-                    <Button
-                      variant="contained"
-                      size="small"
-                      startIcon={<ImageIcon />}
-                      onClick={() => addContentBlock('image')}
-                      color="secondary"
-                      sx={{ fontWeight: 600 }}
-                    >
-                      Image
-                    </Button>
-                  </Tooltip>
-                  <Tooltip title="Add Code Block">
-                    <Button 
-                      variant="contained" 
-                      size="small" 
-                      startIcon={<CodeIcon />} 
-                      onClick={() => addContentBlock('code')} 
-                      sx={{ 
-                        fontWeight: 600,
-                        bgcolor: darkMode ? '#7c3aed' : '#9c27b0',
-                        '&:hover': { bgcolor: darkMode ? '#6d28d9' : '#7b1fa2' }
-                      }}
-                    >
-                      Code
-                    </Button>
-                  </Tooltip>
                 </Box>
               </Box>
 
@@ -504,7 +408,11 @@ const StudyMaterialEdit = () => {
                       Preview
                     </Typography>
                     <Box sx={{ 
-                      '& h2': { fontSize: '1.75rem', fontWeight: 700, mb: 3, color: darkMode ? '#f1f5f9' : '#0f172a' }, 
+                      '& h1, & h2, & h3, & h4, & h5, & h6': { fontWeight: 700, mb: 2, color: darkMode ? '#f1f5f9' : '#0f172a' },
+                      '& h1': { fontSize: '2.5rem' },
+                      '& h2': { fontSize: '1.75rem' }, 
+                      '& h3': { fontSize: '1.5rem' },
+                      '& h4': { fontSize: '1.25rem' },
                       '& p': { mb: 2.5, lineHeight: 1.8, fontSize: '1rem' }, 
                       '& ul, & ol': { mb: 2.5, pl: 4, lineHeight: 1.8 }, 
                       '& li': { mb: 1 },
@@ -513,7 +421,13 @@ const StudyMaterialEdit = () => {
                       '& td': { p: 2, borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}` }, 
                       '& pre': { bgcolor: darkMode ? '#0f172a' : '#1e293b', color: '#e2e8f0', p: 3, borderRadius: 2, overflow: 'auto', mb: 3, border: `1px solid ${darkMode ? '#334155' : '#475569'}` }, 
                       '& code': { fontFamily: 'monospace', fontSize: '0.9rem' },
-                      '& img': { maxWidth: '100%', height: 'auto', borderRadius: 2, boxShadow: darkMode ? '0 8px 16px rgba(0,0,0,0.4)' : '0 8px 16px rgba(0,0,0,0.1)' }
+                      '& img': { maxWidth: '100%', height: 'auto', borderRadius: 2, boxShadow: darkMode ? '0 8px 16px rgba(0,0,0,0.4)' : '0 8px 16px rgba(0,0,0,0.1)' },
+                      '& a': { color: darkMode ? '#60a5fa' : '#1976d2', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } },
+                      '& blockquote': { borderLeft: `4px solid ${darkMode ? '#3b82f6' : '#1976d2'}`, pl: 3, py: 1, my: 2, fontStyle: 'italic', color: darkMode ? '#94a3b8' : '#64748b' },
+                      '& strong, & b': { fontWeight: 700 },
+                      '& em, & i': { fontStyle: 'italic' },
+                      '& hr': { border: 'none', borderTop: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`, my: 3 },
+                      '& *': { maxWidth: '100%' }
                     }}>
                       <div dangerouslySetInnerHTML={{ __html: currentLesson.content }} />
                     </Box>
