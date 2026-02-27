@@ -21,7 +21,8 @@ import {
   Psychology,
   Security,
   CloudQueue,
-  DeviceHub
+  DeviceHub,
+  DataObject
 } from '@mui/icons-material';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -71,6 +72,14 @@ const CreateAssessment = () => {
       icon: <Storage sx={{ fontSize: 40 }} />,
       color: '#ef4444',
       bgColor: darkMode ? 'rgba(239, 68, 68, 0.1)' : 'rgba(239, 68, 68, 0.05)'
+    },
+    {
+      id: 'mongodb-playground',
+      title: 'MongoDB Playground',
+      description: 'MongoDB queries, CRUD operations, aggregation',
+      icon: <DataObject sx={{ fontSize: 40 }} />,
+      color: '#10b981',
+      bgColor: darkMode ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.05)'
     },
     {
       id: 'soft-skills',

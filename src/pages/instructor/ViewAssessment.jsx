@@ -43,7 +43,8 @@ import {
   Language,
   Security,
   Assignment,
-  Search
+  Search,
+  Storage
 } from '@mui/icons-material';
 import { useTheme } from '../../contexts/ThemeContext';
 import toast from 'react-hot-toast';
@@ -70,6 +71,7 @@ const ViewAssessment = () => {
   const [tabValue, setTabValue] = useState(0);
   const [availableQuestions, setAvailableQuestions] = useState([]);
   const [availableQuizQuestions, setAvailableQuizQuestions] = useState([]);
+  const [availableMongoDBQuestions, setAvailableMongoDBQuestions] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [questionFormData, setQuestionFormData] = useState(null);
@@ -81,7 +83,8 @@ const ViewAssessment = () => {
   const [editQuestionLoading, setEditQuestionLoading] = useState(false);
   const [addToAssessmentLoading, setAddToAssessmentLoading] = useState(null);
   const [editAssessmentOpen, setEditAssessmentOpen] = useState(false);
-  const [assessmentEditData, setAssessmentEditData] = useState({ title: '', description: '' });
+  const [assessmentEditData, setAssessmentEditData] = useState({ title: '', description: '', batches: [] });
+  const [availableBatches, setAvailableBatches] = useState([]);
   const questionsPerPage = 5;
   const [runCodeOpen, setRunCodeOpen] = useState(false);
   const [selectedQuestionForRun, setSelectedQuestionForRun] = useState(null);
@@ -99,7 +102,14 @@ const ViewAssessment = () => {
     fetchAvailableQuestions();
     fetchAvailableQuizQuestions();
     fetchAvailableFrontendQuestions();
+    fetchAvailableMongoDBQuestions();
   }, [assessmentId]);
+
+  useEffect(() => {
+    if (assessment?.tenantId) {
+      fetchAvailableBatches();
+    }
+  }, [assessment?.tenantId]);
 
   // Timer effect
   useEffect(() => {
@@ -227,14 +237,7 @@ const ViewAssessment = () => {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('=== ASSESSMENT DATA ===' );
-        console.log('Full assessment:', data);
-        console.log('Assessment type:', data.type);
-        console.log('Programming questions:', data.questions);
-        console.log('Quiz questions:', data.quizQuestions);
-        console.log('Quiz questions length:', data.quizQuestions?.length);
-        console.log('Frontend questions:', data.frontendQuestions);
-        console.log('======================');
+        console.log('MongoDB questions:', data.mongodbPlaygroundQuestions);
         setAssessment(data);
       }
     } catch (error) {
@@ -293,6 +296,43 @@ const ViewAssessment = () => {
       }
     } catch (error) {
       console.error('Error fetching frontend questions:', error);
+    }
+  };
+
+  const fetchAvailableMongoDBQuestions = async () => {
+    try {
+      const response = await fetch(`http://localhost:4000/api/mongodb-playground-questions`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableMongoDBQuestions(data);
+      }
+    } catch (error) {
+      console.error('Error fetching MongoDB questions:', error);
+    }
+  };
+
+  const fetchAvailableBatches = async () => {
+    if (!assessment?.tenantId) return;
+    try {
+      const response = await fetch(`http://localhost:4000/api/batches?tenantId=${assessment.tenantId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableBatches(data);
+      } else {
+        console.error('Failed to fetch batches:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching batches:', error);
     }
   };
 
@@ -761,7 +801,16 @@ const ViewAssessment = () => {
               </Typography>
               <IconButton
                 onClick={() => {
-                  setAssessmentEditData({ title: assessment.title, description: assessment.description });
+                  const batchIds = Array.isArray(assessment.batches) 
+                    ? assessment.batches.map(b => typeof b === 'string' ? b : b._id)
+                    : [];
+                  console.log('Opening edit dialog with batches:', batchIds);
+                  console.log('Available batches:', availableBatches);
+                  setAssessmentEditData({ 
+                    title: assessment.title, 
+                    description: assessment.description,
+                    batches: batchIds
+                  });
                   setEditAssessmentOpen(true);
                 }}
                 sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.2)', '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' } }}
@@ -966,7 +1015,7 @@ const ViewAssessment = () => {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
             <Typography variant="h5" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center' }}>
               <Code sx={{ mr: 2, color: 'primary.main' }} />
-              {assessment.type === 'frontend' ? 'Frontend' : assessment.type === 'backend' ? 'Backend' : 'Programming'} Questions ({(assessment.type === 'frontend' ? assessment.frontendQuestions?.length : assessment.questions?.length) || 0})
+              {assessment.type === 'frontend' ? 'Frontend' : assessment.type === 'backend' ? 'Backend' : assessment.type === 'mongodb' ? 'MongoDB' : 'Programming'} Questions ({(assessment.type === 'frontend' ? assessment.frontendQuestions?.length : assessment.type === 'mongodb' ? assessment.mongodbPlaygroundQuestions?.length : assessment.questions?.length) || 0})
             </Typography>
             <Button
               variant="contained"
@@ -992,9 +1041,9 @@ const ViewAssessment = () => {
             </Button>
           </Box>
 
-          {(assessment.type === 'frontend' ? assessment.frontendQuestions?.length : assessment.questions?.length) > 0 ? (
+          {(assessment.type === 'frontend' ? assessment.frontendQuestions?.length : assessment.type === 'mongodb' ? assessment.mongodbPlaygroundQuestions?.length : assessment.questions?.length) > 0 ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {(assessment.type === 'frontend' ? assessment.frontendQuestions : assessment.questions).map((question, index) => (
+              {(assessment.type === 'frontend' ? assessment.frontendQuestions : assessment.type === 'mongodb' ? assessment.mongodbPlaygroundQuestions : assessment.questions).map((question, index) => (
                 <Card 
                   key={question._id} 
                   sx={{ 
@@ -1040,6 +1089,12 @@ const ViewAssessment = () => {
                               size="small" 
                               sx={{ bgcolor: darkMode ? 'grey.700' : 'grey.200', fontWeight: 600 }}
                             />
+                          ) : assessment.type === 'mongodb' ? (
+                            <Chip 
+                              label="MongoDB" 
+                              size="small" 
+                              sx={{ bgcolor: '#10b981', color: 'white', fontWeight: 600 }}
+                            />
                           ) : (
                             <Chip 
                               label={`${question.testCases?.length || 0} test cases`} 
@@ -1050,7 +1105,7 @@ const ViewAssessment = () => {
                         </Box>
                       </Box>
                       <Box sx={{ display: 'flex', gap: 1 }}>
-                        {assessment.type !== 'frontend' && (
+                        {assessment.type !== 'frontend' && assessment.type !== 'mongodb' && (
                           <Button
                             size="medium"
                             variant="contained"
@@ -1066,7 +1121,7 @@ const ViewAssessment = () => {
                             Run
                           </Button>
                         )}
-                        {assessment.type !== 'frontend' && (
+                        {assessment.type !== 'frontend' && assessment.type !== 'mongodb' && (
                           <Button
                             size="medium"
                             variant="contained"
@@ -1088,7 +1143,12 @@ const ViewAssessment = () => {
                           startIcon={<Delete />}
                           onClick={async () => {
                             try {
-                              const response = await fetch(`http://localhost:4000/api/assessments/${assessmentId}/frontend-questions/${question._id}`, {
+                              const endpoint = assessment.type === 'frontend' 
+                                ? `http://localhost:4000/api/assessments/${assessmentId}/frontend-questions/${question._id}`
+                                : assessment.type === 'mongodb'
+                                ? `http://localhost:4000/api/assessments/${assessmentId}/mongodb-questions/${question._id}`
+                                : `http://localhost:4000/api/assessments/${assessmentId}`;
+                              const response = await fetch(endpoint, {
                                 method: 'DELETE',
                                 headers: {
                                   'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1581,15 +1641,328 @@ const ViewAssessment = () => {
       <Dialog open={addQuestionOpen} onClose={() => setAddQuestionOpen(false)} maxWidth="lg" fullWidth>
         <DialogTitle>Add Question to Assessment</DialogTitle>
         <DialogContent>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-            <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
-              <Tab label="Available Questions" />
-              <Tab label="Quiz Questions" />
-              <Tab label="Create New Question" />
-            </Tabs>
+          <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
+            {assessment?.type === 'mongodb' ? (
+              <>
+                <Button 
+                  variant={tabValue === 0 ? 'contained' : 'outlined'}
+                  onClick={() => {
+                    setTabValue(0);
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                  }}
+                >
+                  Quiz Questions
+                </Button>
+                <Button 
+                  variant={tabValue === 1 ? 'contained' : 'outlined'}
+                  onClick={() => {
+                    setTabValue(1);
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                  }}
+                >
+                  MongoDB Questions
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant={tabValue === 0 ? 'contained' : 'outlined'}
+                  onClick={() => {
+                    setTabValue(0);
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                  }}
+                >
+                  Available Questions
+                </Button>
+                <Button 
+                  variant={tabValue === 1 ? 'contained' : 'outlined'}
+                  onClick={() => {
+                    setTabValue(1);
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                  }}
+                >
+                  Quiz Questions
+                </Button>
+                {assessment?.type === 'programming' && (
+                  <Button 
+                    variant={tabValue === 2 ? 'contained' : 'outlined'}
+                    onClick={() => {
+                      setTabValue(2);
+                      setSearchQuery('');
+                      setCurrentPage(1);
+                    }}
+                  >
+                    Create New Question
+                  </Button>
+                )}
+              </>
+            )}
           </Box>
           
-          {tabValue === 0 && (
+          {assessment?.type === 'mongodb' ? (
+            <>
+              {tabValue === 0 && (
+            <Box>
+              <TextField
+                fullWidth
+                placeholder="Search quiz questions by title, topic, or tags..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                sx={{ mb: 3 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              
+              <Grid container spacing={2}>
+                {(() => {
+                  const filteredQuestions = availableQuizQuestions.filter(question =>
+                    question.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    question.topic?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    question.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+                  );
+                  
+                  const totalPages = Math.ceil(filteredQuestions.length / questionsPerPage);
+                  const paginatedQuestions = filteredQuestions.slice(
+                    (currentPage - 1) * questionsPerPage,
+                    currentPage * questionsPerPage
+                  );
+                  
+                  return (
+                    <>
+                      {paginatedQuestions.length === 0 ? (
+                        <Grid item xs={12}>
+                          <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                            <Quiz sx={{ fontSize: 48, mb: 2 }} />
+                            <Typography>
+                              {searchQuery ? 'No quiz questions found matching your search.' : 'No available quiz questions.'}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      ) : (
+                        paginatedQuestions.map((question) => (
+                          <Grid item xs={12} key={question._id}>
+                            <Card sx={{ 
+                              p: 2, 
+                              border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`,
+                              cursor: 'pointer',
+                              '&:hover': {
+                                borderColor: 'primary.main'
+                              }
+                            }}>
+                              <Box display="flex" justifyContent="space-between" alignItems="center">
+                                <Box>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                    {question.title}
+                                  </Typography>
+                                  <Typography variant="body2" color="text.secondary">
+                                    Topic: {question.topic || 'General'} | {question.options?.length || 0} options
+                                  </Typography>
+                                  <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                                    <Chip 
+                                      label={question.difficulty} 
+                                      size="small" 
+                                      color={question.difficulty === 'easy' ? 'success' : question.difficulty === 'medium' ? 'warning' : 'error'} 
+                                    />
+                                    <Chip 
+                                      label="Quiz Question" 
+                                      size="small" 
+                                      sx={{ bgcolor: 'info.main', color: 'white' }}
+                                    />
+                                  </Box>
+                                </Box>
+                                <Button 
+                                  size="small" 
+                                  variant={assessment?.quizQuestions?.some(aq => aq._id === question._id) ? "contained" : "outlined"}
+                                  color={assessment?.quizQuestions?.some(aq => aq._id === question._id) ? "error" : "primary"}
+                                  disabled={addToAssessmentLoading === question._id}
+                                  onClick={() => assessment?.quizQuestions?.some(aq => aq._id === question._id) 
+                                    ? handleRemoveQuizQuestion(question._id) 
+                                    : addQuizQuestionToAssessment(question)
+                                  }
+                                >
+                                  {addToAssessmentLoading === question._id 
+                                    ? (assessment?.quizQuestions?.some(aq => aq._id === question._id) ? 'Removing...' : 'Adding...') 
+                                    : (assessment?.quizQuestions?.some(aq => aq._id === question._id) ? 'Remove' : 'Add to Assessment')
+                                  }
+                                </Button>
+                              </Box>
+                            </Card>
+                          </Grid>
+                        ))
+                      )}
+                      
+                      {totalPages > 1 && (
+                        <Grid item xs={12}>
+                          <Box display="flex" justifyContent="center" mt={3}>
+                            <Pagination 
+                              count={totalPages}
+                              page={currentPage}
+                              onChange={(e, page) => setCurrentPage(page)}
+                              color="primary"
+                            />
+                          </Box>
+                        </Grid>
+                      )}
+                    </>
+                  );
+                })()
+                }
+              </Grid>
+            </Box>
+              )}
+              
+              {tabValue === 1 && (
+            <Box>
+              <TextField
+                fullWidth
+                placeholder="Search MongoDB questions by title or tags..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                sx={{ mb: 3 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              
+              <Grid container spacing={2}>
+                {(() => {
+                  const filteredQuestions = availableMongoDBQuestions.filter(question =>
+                    question.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    question.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+                  );
+                  
+                  const totalPages = Math.ceil(filteredQuestions.length / questionsPerPage);
+                  const paginatedQuestions = filteredQuestions.slice(
+                    (currentPage - 1) * questionsPerPage,
+                    currentPage * questionsPerPage
+                  );
+                  
+                  return (
+                    <>
+                      {paginatedQuestions.length === 0 ? (
+                        <Grid item xs={12}>
+                          <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                            <Storage sx={{ fontSize: 48, mb: 2 }} />
+                            <Typography>
+                              {searchQuery ? 'No MongoDB questions found matching your search.' : 'No available MongoDB questions.'}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      ) : (
+                        paginatedQuestions.map((question) => (
+                          <Grid item xs={12} key={question._id}>
+                            <Card sx={{ 
+                              p: 2, 
+                              border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`,
+                              cursor: 'pointer',
+                              '&:hover': {
+                                borderColor: 'primary.main'
+                              }
+                            }}>
+                              <Box display="flex" justifyContent="space-between" alignItems="center">
+                                <Box>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                    {question.title}
+                                  </Typography>
+                                  <Typography variant="body2" color="text.secondary">
+                                    {question.problemStatement?.substring(0, 100)}...
+                                  </Typography>
+                                  <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                                    <Chip 
+                                      label={question.difficulty} 
+                                      size="small" 
+                                      color={question.difficulty === 'easy' ? 'success' : question.difficulty === 'medium' ? 'warning' : 'error'} 
+                                    />
+                                    <Chip 
+                                      label="MongoDB" 
+                                      size="small" 
+                                      sx={{ bgcolor: '#10b981', color: 'white' }}
+                                    />
+                                  </Box>
+                                </Box>
+                                <Button 
+                                  size="small" 
+                                  variant={assessment?.mongodbPlaygroundQuestions?.some(aq => aq._id === question._id) ? "contained" : "outlined"}
+                                  color={assessment?.mongodbPlaygroundQuestions?.some(aq => aq._id === question._id) ? "error" : "primary"}
+                                  disabled={addToAssessmentLoading === question._id}
+                                  onClick={async () => {
+                                    setAddToAssessmentLoading(question._id);
+                                    try {
+                                      const isAdded = assessment?.mongodbPlaygroundQuestions?.some(aq => aq._id === question._id);
+                                      const response = await fetch(`http://localhost:4000/api/assessments/${assessmentId}/mongodb-questions${isAdded ? `/${question._id}` : ''}`, {
+                                        method: isAdded ? 'DELETE' : 'POST',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                          'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                        },
+                                        body: isAdded ? undefined : JSON.stringify({ questionId: question._id })
+                                      });
+                                      if (response.ok) {
+                                        fetchAssessment();
+                                        toast.success(isAdded ? 'MongoDB question removed' : 'MongoDB question added');
+                                      } else {
+                                        toast.error('Failed to update assessment');
+                                      }
+                                    } catch (error) {
+                                      toast.error('Error updating assessment');
+                                    } finally {
+                                      setAddToAssessmentLoading(null);
+                                    }
+                                  }}
+                                >
+                                  {addToAssessmentLoading === question._id 
+                                    ? (assessment?.mongodbPlaygroundQuestions?.some(aq => aq._id === question._id) ? 'Removing...' : 'Adding...') 
+                                    : (assessment?.mongodbPlaygroundQuestions?.some(aq => aq._id === question._id) ? 'Remove' : 'Add to Assessment')
+                                  }
+                                </Button>
+                              </Box>
+                            </Card>
+                          </Grid>
+                        ))
+                      )}
+                      
+                      {totalPages > 1 && (
+                        <Grid item xs={12}>
+                          <Box display="flex" justifyContent="center" mt={3}>
+                            <Pagination 
+                              count={totalPages}
+                              page={currentPage}
+                              onChange={(e, page) => setCurrentPage(page)}
+                              color="primary"
+                            />
+                          </Box>
+                        </Grid>
+                      )}
+                    </>
+                  );
+                })()
+                }
+              </Grid>
+            </Box>
+              )}
+            </>
+          ) : (
+            <>
+              {tabValue === 0 && (
             <Box>
               <TextField
                 fullWidth
@@ -1700,7 +2073,7 @@ const ViewAssessment = () => {
               </Grid>
             </Box>
               )}
-          
+              
               {tabValue === 1 && (
             <Box>
               <TextField
@@ -1819,7 +2192,7 @@ const ViewAssessment = () => {
             </Box>
               )}
           
-              {tabValue === 2 && (
+              {assessment?.type === 'programming' && tabValue === 2 && (
             <Box>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -1855,6 +2228,8 @@ const ViewAssessment = () => {
               </Box>
             </Box>
               )}
+            </>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAddQuestionOpen(false)} disabled={createQuestionLoading}>Cancel</Button>
@@ -1874,14 +2249,148 @@ const ViewAssessment = () => {
       <Dialog open={addFrontendQuestionOpen} onClose={() => setAddFrontendQuestionOpen(false)} maxWidth="lg" fullWidth>
         <DialogTitle>Add Frontend Question to Assessment</DialogTitle>
         <DialogContent>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-            <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
-              <Tab label="Available Frontend Questions" />
-              <Tab label="Create Frontend Question" />
-            </Tabs>
+          <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
+            <Button 
+              variant={tabValue === 0 ? 'contained' : 'outlined'}
+              onClick={() => {
+                setTabValue(0);
+                setSearchQuery('');
+                setCurrentPage(1);
+              }}
+            >
+              Quiz Questions
+            </Button>
+            <Button 
+              variant={tabValue === 1 ? 'contained' : 'outlined'}
+              onClick={() => {
+                setTabValue(1);
+                setSearchQuery('');
+                setCurrentPage(1);
+              }}
+            >
+              Available Frontend Questions
+            </Button>
           </Box>
           
           {tabValue === 0 && (
+            <Box>
+              <TextField
+                fullWidth
+                placeholder="Search quiz questions by title, topic, or tags..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                sx={{ mb: 3 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              
+              <Grid container spacing={2}>
+                {(() => {
+                  const filteredQuestions = availableQuizQuestions.filter(question =>
+                    question.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    question.topic?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    question.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+                  );
+                  
+                  const totalPages = Math.ceil(filteredQuestions.length / questionsPerPage);
+                  const paginatedQuestions = filteredQuestions.slice(
+                    (currentPage - 1) * questionsPerPage,
+                    currentPage * questionsPerPage
+                  );
+                  
+                  return (
+                    <>
+                      {paginatedQuestions.length === 0 ? (
+                        <Grid item xs={12}>
+                          <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                            <Quiz sx={{ fontSize: 48, mb: 2 }} />
+                            <Typography>
+                              {searchQuery ? 'No quiz questions found matching your search.' : 'No available quiz questions.'}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      ) : (
+                        paginatedQuestions.map((question) => (
+                          <Grid item xs={12} key={question._id}>
+                            <Card sx={{ 
+                              p: 2, 
+                              border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`,
+                              cursor: 'pointer',
+                              '&:hover': {
+                                borderColor: 'primary.main'
+                              }
+                            }}>
+                              <Box display="flex" justifyContent="space-between" alignItems="center">
+                                <Box>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                    {question.title}
+                                  </Typography>
+                                  <Typography variant="body2" color="text.secondary">
+                                    Topic: {question.topic || 'General'} | {question.options?.length || 0} options
+                                  </Typography>
+                                  <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                                    <Chip 
+                                      label={question.difficulty} 
+                                      size="small" 
+                                      color={question.difficulty === 'easy' ? 'success' : question.difficulty === 'medium' ? 'warning' : 'error'} 
+                                    />
+                                    <Chip 
+                                      label="Quiz Question" 
+                                      size="small" 
+                                      sx={{ bgcolor: 'info.main', color: 'white' }}
+                                    />
+                                  </Box>
+                                </Box>
+                                <Button 
+                                  size="small" 
+                                  variant={assessment?.quizQuestions?.some(aq => aq._id === question._id) ? "contained" : "outlined"}
+                                  color={assessment?.quizQuestions?.some(aq => aq._id === question._id) ? "error" : "primary"}
+                                  disabled={addToAssessmentLoading === question._id}
+                                  onClick={() => assessment?.quizQuestions?.some(aq => aq._id === question._id) 
+                                    ? handleRemoveQuizQuestion(question._id) 
+                                    : addQuizQuestionToAssessment(question)
+                                  }
+                                >
+                                  {addToAssessmentLoading === question._id 
+                                    ? (assessment?.quizQuestions?.some(aq => aq._id === question._id) ? 'Removing...' : 'Adding...') 
+                                    : (assessment?.quizQuestions?.some(aq => aq._id === question._id) ? 'Remove' : 'Add to Assessment')
+                                  }
+                                </Button>
+                              </Box>
+                            </Card>
+                          </Grid>
+                        ))
+                      )}
+                      
+                      {totalPages > 1 && (
+                        <Grid item xs={12}>
+                          <Box display="flex" justifyContent="center" mt={3}>
+                            <Pagination 
+                              count={totalPages}
+                              page={currentPage}
+                              onChange={(e, page) => setCurrentPage(page)}
+                              color="primary"
+                            />
+                          </Box>
+                        </Grid>
+                      )}
+                    </>
+                  );
+                })()
+                }
+              </Grid>
+            </Box>
+          )}
+          
+          {tabValue === 1 && (
             <Box>
               <TextField
                 fullWidth
@@ -2016,88 +2525,9 @@ const ViewAssessment = () => {
               </Grid>
             </Box>
           )}
-          
-          {tabValue === 1 && (
-            <Box>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  Paste your frontend question JSON data below:
-                </Typography>
-              </Box>
-              
-              <Box sx={{ height: '400px' }}>
-                <JSONInput
-                  id='frontend-json-editor'
-                  placeholder={{
-                    title: 'Build a Todo App',
-                    problemStatement: 'Create a simple todo application',
-                    requirements: ['Add new todos', 'Mark todos as complete'],
-                    acceptanceCriteria: ['User can add todos', 'User can mark complete'],
-                    jestTestFile: 'test code here',
-                    difficulty: 'Easy',
-                    tags: ['React', 'JavaScript']
-                  }}
-                  locale={locale}
-                  height='100%'
-                  width='100%'
-                  onChange={(data) => {
-                    if (!data.error) {
-                      setQuestionFormData(data.jsObject);
-                    }
-                  }}
-                  theme={darkMode ? 'dark_vscode_tribute' : 'light_mitsuketa_tribute'}
-                  viewOnly={false}
-                  confirmGood={false}
-                  style={{
-                    body: {
-                      fontSize: '14px',
-                      fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace'
-                    }
-                  }}
-                />
-              </Box>
-            </Box>
-          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAddFrontendQuestionOpen(false)} disabled={createQuestionLoading}>Cancel</Button>
-          {tabValue === 1 && (
-            <Button 
-              onClick={async () => {
-                if (!questionFormData) {
-                  toast.error('Please provide question data');
-                  return;
-                }
-                setCreateQuestionLoading(true);
-                try {
-                  const response = await fetch('http://localhost:4000/api/frontend-questions', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: JSON.stringify(questionFormData)
-                  });
-                  if (response.ok) {
-                    toast.success('Frontend question created successfully');
-                    setAddFrontendQuestionOpen(false);
-                    setQuestionFormData(null);
-                    fetchAssessment();
-                  } else {
-                    toast.error('Failed to create frontend question');
-                  }
-                } catch (error) {
-                  toast.error('Error creating frontend question');
-                } finally {
-                  setCreateQuestionLoading(false);
-                }
-              }}
-              variant="contained"
-              disabled={!questionFormData || createQuestionLoading}
-            >
-              {createQuestionLoading ? 'Creating...' : 'Create & Add Question'}
-            </Button>
-          )}
         </DialogActions>
       </Dialog>
 
@@ -2373,7 +2803,46 @@ const ViewAssessment = () => {
               label="Description"
               value={assessmentEditData.description}
               onChange={(e) => setAssessmentEditData({...assessmentEditData, description: e.target.value})}
+              sx={{ mb: 3 }}
             />
+            <FormControl fullWidth>
+              <InputLabel>Batches</InputLabel>
+              <Select
+                multiple
+                value={assessmentEditData.batches || []}
+                onChange={(e) => setAssessmentEditData({...assessmentEditData, batches: e.target.value})}
+                label="Batches"
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.length === 0 ? (
+                      <Typography variant="body2" color="text.secondary">No batches selected</Typography>
+                    ) : (
+                      selected.map((batchId) => {
+                        const batch = availableBatches.find(b => b._id === batchId);
+                        return batch ? <Chip key={batchId} label={batch.name} size="small" color="primary" /> : null;
+                      })
+                    )}
+                  </Box>
+                )}
+              >
+                {availableBatches.length === 0 ? (
+                  <MenuItem disabled>
+                    <Typography color="text.secondary">No batches available</Typography>
+                  </MenuItem>
+                ) : (
+                  availableBatches.map((batch) => (
+                    <MenuItem key={batch._id} value={batch._id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+                        <Typography>{batch.name}</Typography>
+                        {assessmentEditData.batches?.includes(batch._id) && (
+                          <Chip label="Selected" size="small" color="success" sx={{ ml: 2 }} />
+                        )}
+                      </Box>
+                    </MenuItem>
+                  ))
+                )}
+              </Select>
+            </FormControl>
           </Box>
         </DialogContent>
         <DialogActions>

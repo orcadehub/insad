@@ -48,6 +48,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import CreateQuiz from './pages/instructor/CreateQuiz';
 import CreateAssessment from './pages/instructor/CreateAssessment';
 import CreateProgrammingAssessment from './pages/instructor/CreateProgrammingAssessment';
+import CreateMongoDBPlaygroundAssessment from './pages/instructor/CreateMongoDBPlaygroundAssessment';
 import AssessmentDetails from './pages/instructor/AssessmentDetails';
 import ViewAssessment from './pages/instructor/ViewAssessment';
 import CompanySpecificManagement from './pages/instructor/CompanySpecificManagement';
@@ -155,6 +156,7 @@ const AppContent = () => {
             <Route path="create-quiz" element={<CreateQuiz />} />
             <Route path="create-assessment" element={<CreateAssessment />} />
             <Route path="create-assessment/programming" element={<CreateProgrammingAssessment />} />
+            <Route path="create-assessment/mongodb-playground" element={<CreateMongoDBPlaygroundAssessment />} />
             <Route path="create-assessment/gamified-aptitude" element={<div>Gamified Aptitude Assessment - Coming Soon</div>} />
             <Route path="create-assessment/frontend" element={<CreateFrontendAssessment />} />
             <Route path="create-assessment/backend-api" element={<CreateBackendAssessment />} />

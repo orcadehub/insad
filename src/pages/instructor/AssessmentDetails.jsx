@@ -32,6 +32,7 @@ const AssessmentDetails = () => {
   const [markAllInProgressOpen, setMarkAllInProgressOpen] = useState(false);
   const [markAllResumeOpen, setMarkAllResumeOpen] = useState(false);
   const [markAllCompletedResumeOpen, setMarkAllCompletedResumeOpen] = useState(false);
+  const [deleteAllAttemptsOpen, setDeleteAllAttemptsOpen] = useState(false);
 
   useEffect(() => {
     if (selectedTenant && id) {
@@ -263,6 +264,28 @@ const AssessmentDetails = () => {
       }
     } catch (error) {
       toast.error('Error marking students as resume allowed');
+    }
+  };
+
+  const handleDeleteAllAttempts = async () => {
+    try {
+      const response = await fetch(`http://localhost:4000/api/assessments/${id}/delete-all-attempts`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(`${data.count} attempts deleted successfully`);
+        fetchStudentAttempts();
+        setDeleteAllAttemptsOpen(false);
+      } else {
+        toast.error('Failed to delete attempts');
+      }
+    } catch (error) {
+      toast.error('Error deleting attempts');
     }
   };
 
@@ -723,6 +746,18 @@ const AssessmentDetails = () => {
                 >
                   Mark All Completed as Resume Allowed
                 </Button>
+                <Button
+                  variant="contained"
+                  onClick={() => setDeleteAllAttemptsOpen(true)}
+                  sx={{
+                    bgcolor: '#ef4444',
+                    '&:hover': { bgcolor: '#dc2626' },
+                    textTransform: 'none',
+                    fontWeight: 600
+                  }}
+                >
+                  Delete All Attempts
+                </Button>
               <TextField
                 size="medium"
                 placeholder="Search students..."
@@ -1040,10 +1075,9 @@ const AssessmentDetails = () => {
                 }}
               >
                 <MenuItem value={0}>No late start allowed</MenuItem>
-                <MenuItem value={5}>5 minutes after start</MenuItem>
-                <MenuItem value={10}>10 minutes after start</MenuItem>
-                <MenuItem value={15}>15 minutes after start</MenuItem>
-                <MenuItem value={30}>30 minutes after start</MenuItem>
+                {Array.from({ length: Math.floor(duration / 10) }, (_, i) => (i + 1) * 10).map(minutes => (
+                  <MenuItem key={minutes} value={minutes}>{minutes} minutes after start</MenuItem>
+                ))}
               </Select>
             </FormControl>
             <FormControl fullWidth>
@@ -1327,6 +1361,29 @@ const AssessmentDetails = () => {
             sx={{ bgcolor: '#8b5cf6', '&:hover': { bgcolor: '#7c3aed' } }}
           >
             Mark All Resume Allowed
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete All Attempts Dialog */}
+      <Dialog open={deleteAllAttemptsOpen} onClose={() => setDeleteAllAttemptsOpen(false)}>
+        <DialogTitle>Delete All Assessment Attempts</DialogTitle>
+        <DialogContent>
+          <Typography color="error" fontWeight="bold" mb={2}>
+            ⚠️ WARNING: This action cannot be undone!
+          </Typography>
+          <Typography>
+            Are you sure you want to delete ALL student attempts for this assessment? This will permanently remove all attempt records, submissions, and progress data.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteAllAttemptsOpen(false)}>Cancel</Button>
+          <Button 
+            onClick={handleDeleteAllAttempts}
+            variant="contained"
+            color="error"
+          >
+            Delete All Attempts
           </Button>
         </DialogActions>
       </Dialog>

@@ -15,9 +15,14 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
-import { Add, AccessTime, CheckCircle, Download, Visibility, Delete } from '@mui/icons-material';
+import { Add, AccessTime, CheckCircle, Download, Visibility, Delete, Edit } from '@mui/icons-material';
 import { useTenant } from '../../contexts/TenantContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import toast from 'react-hot-toast';
@@ -32,10 +37,15 @@ const AssessmentManagement = () => {
   const [downloadingAssessment, setDownloadingAssessment] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [assessmentToDelete, setAssessmentToDelete] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [assessmentToEdit, setAssessmentToEdit] = useState(null);
+  const [editData, setEditData] = useState({ title: '', description: '', batches: [] });
+  const [availableBatches, setAvailableBatches] = useState([]);
 
   useEffect(() => {
     if (selectedTenant) {
       fetchAssessments();
+      fetchBatches();
     }
   }, [selectedTenant]);
 
@@ -45,6 +55,15 @@ const AssessmentManagement = () => {
       setAssessments(response.data);
     } catch (error) {
       console.error('Error fetching assessments:', error);
+    }
+  };
+
+  const fetchBatches = async () => {
+    try {
+      const response = await api.get('/batches');
+      setAvailableBatches(response.data);
+    } catch (error) {
+      console.error('Error fetching batches:', error);
     }
   };
 
@@ -127,6 +146,32 @@ const AssessmentManagement = () => {
     }
   };
 
+  const handleEditAssessment = (e, assessment) => {
+    e.stopPropagation();
+    const batchIds = Array.isArray(assessment.batches) 
+      ? assessment.batches.map(b => typeof b === 'string' ? b : b._id)
+      : [];
+    setAssessmentToEdit(assessment);
+    setEditData({ 
+      title: assessment.title, 
+      description: assessment.description,
+      batches: batchIds
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      await api.put(`/assessments/${assessmentToEdit._id}`, editData);
+      toast.success('Assessment updated successfully');
+      fetchAssessments();
+      setEditDialogOpen(false);
+    } catch (error) {
+      console.error('Error updating assessment:', error);
+      toast.error('Error updating assessment');
+    }
+  };
+
   const availableAssessments = assessments.filter(assessment => assessment.status === 'active' || assessment.status === 'draft');
   const completedAssessments = assessments.filter(assessment => assessment.status === 'completed' || assessment.status === 'expired');
 
@@ -176,6 +221,17 @@ const AssessmentManagement = () => {
                 </Typography>
                 
                 <Box display="flex" flexWrap="wrap" gap={1.5} mb={3}>
+                  <Chip 
+                    label={assessment.type || 'General'}
+                    size="medium"
+                    sx={{ 
+                      fontWeight: 600,
+                      bgcolor: darkMode ? 'info.900' : 'info.50',
+                      color: 'info.main',
+                      border: 'none',
+                      textTransform: 'capitalize'
+                    }}
+                  />
                   <Chip 
                     icon={<AccessTime />}
                     label={`${assessment.duration || 0} min`}
@@ -411,6 +467,73 @@ const AssessmentManagement = () => {
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
           <Button onClick={confirmDelete} color="error" variant="contained">Delete</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Assessment Dialog */}
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Assessment</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <TextField
+              fullWidth
+              label="Title"
+              value={editData.title}
+              onChange={(e) => setEditData({...editData, title: e.target.value})}
+              sx={{ mb: 3 }}
+            />
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              label="Description"
+              value={editData.description}
+              onChange={(e) => setEditData({...editData, description: e.target.value})}
+              sx={{ mb: 3 }}
+            />
+            <FormControl fullWidth>
+              <InputLabel>Batches</InputLabel>
+              <Select
+                multiple
+                value={editData.batches || []}
+                onChange={(e) => setEditData({...editData, batches: e.target.value})}
+                label="Batches"
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.length === 0 ? (
+                      <Typography variant="body2" color="text.secondary">No batches selected</Typography>
+                    ) : (
+                      selected.map((batchId) => {
+                        const batch = availableBatches.find(b => b._id === batchId);
+                        return batch ? <Chip key={batchId} label={batch.name} size="small" color="primary" /> : null;
+                      })
+                    )}
+                  </Box>
+                )}
+              >
+                {availableBatches.length === 0 ? (
+                  <MenuItem disabled>
+                    <Typography color="text.secondary">No batches available</Typography>
+                  </MenuItem>
+                ) : (
+                  availableBatches.map((batch) => (
+                    <MenuItem key={batch._id} value={batch._id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+                        <Typography>{batch.name}</Typography>
+                        {editData.batches?.includes(batch._id) && (
+                          <Chip label="Selected" size="small" color="success" sx={{ ml: 2 }} />
+                        )}
+                      </Box>
+                    </MenuItem>
+                  ))
+                )}
+              </Select>
+            </FormControl>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleSaveEdit} variant="contained">Save</Button>
         </DialogActions>
       </Dialog>
     </Box>

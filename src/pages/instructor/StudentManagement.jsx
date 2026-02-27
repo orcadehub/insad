@@ -26,6 +26,8 @@ import { useTenant } from '../../contexts/TenantContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:4000/api' : 'https://backend.orcode.in/api';
+
 const StudentManagement = () => {
   const { darkMode } = useTheme();
   const [students, setStudents] = useState([]);
@@ -70,7 +72,7 @@ const StudentManagement = () => {
     formData.append('tenantId', selectedTenant._id);
     
     try {
-      const response = await fetch('http://localhost:4000/api/students/bulk-upload', {
+      const response = await fetch(`${API_BASE_URL}/students/bulk-upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -104,7 +106,7 @@ const StudentManagement = () => {
     if (!selectedTenant) return;
     
     try {
-      const response = await fetch(`http://localhost:4000/api/students?tenantId=${selectedTenant._id}`, {
+      const response = await fetch(`${API_BASE_URL}/students?tenantId=${selectedTenant._id}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -129,7 +131,7 @@ const StudentManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const url = editingStudent ? `http://localhost:4000/api/students/${editingStudent._id}` : 'http://localhost:4000/api/students';
+      const url = editingStudent ? `${API_BASE_URL}/students/${editingStudent._id}` : `${API_BASE_URL}/students`;
       const method = editingStudent ? 'PUT' : 'POST';
       
       const requestBody = {
@@ -194,7 +196,7 @@ const StudentManagement = () => {
     if (!studentToDelete) return;
     
     try {
-      const response = await fetch(`http://localhost:4000/api/students/${studentToDelete._id}`, {
+      const response = await fetch(`${API_BASE_URL}/students/${studentToDelete._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
