@@ -1,3 +1,4 @@
+const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:4000/api' : 'https://backend.orcode.in/api';
 import { Container, Typography, Button, Chip, Box, Grid, Tabs, Tab, Card, CardContent, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Badge, Tooltip, FormControl, InputLabel, Select, MenuItem, TablePagination } from '@mui/material';
 import { Assessment, AccessTime, QuestionAnswer, Schedule, History, ArrowBack, Edit, Delete, PlayArrow, Pause, Stop, Refresh, Visibility, RestartAlt, PersonAdd, Warning, Search } from '@mui/icons-material';
 import { useState, useEffect } from 'react';
@@ -68,7 +69,7 @@ const AssessmentDetails = () => {
 
   const fetchAssessmentDetails = async () => {
     try {
-      const response = await fetch(`http://localhost:4000/api/assessments/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/assessments/${id}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -104,7 +105,7 @@ const AssessmentDetails = () => {
 
   const fetchStudentAttempts = async () => {
     try {
-      const response = await fetch(`http://localhost:4000/api/assessments/${id}/attempts`, {
+      const response = await fetch(`${API_BASE_URL}/assessments/${id}/attempts`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -122,7 +123,7 @@ const AssessmentDetails = () => {
   const handleUpdateStartTime = async () => {
     console.log('Frontend sending allowedIPs:', allowedIPs);
     try {
-      const response = await fetch(`http://localhost:4000/api/assessments/${id}/update-time`, {
+      const response = await fetch(`${API_BASE_URL}/assessments/${id}/update-time`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -153,7 +154,7 @@ const AssessmentDetails = () => {
 
   const handleStudentAction = async (action, studentId, attemptId) => {
     try {
-      const response = await fetch(`http://localhost:4000/api/assessments/attempts/${attemptId}/${action}`, {
+      const response = await fetch(`${API_BASE_URL}/assessments/attempts/${attemptId}/${action}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -177,7 +178,7 @@ const AssessmentDetails = () => {
 
   const handleMarkCompleted = async () => {
     try {
-      const response = await fetch(`http://localhost:4000/api/assessments/${id}/update-time`, {
+      const response = await fetch(`${API_BASE_URL}/assessments/${id}/update-time`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -200,7 +201,7 @@ const AssessmentDetails = () => {
 
   const handleMarkAllInProgressCompleted = async () => {
     try {
-      const response = await fetch(`http://localhost:4000/api/assessments/${id}/mark-all-inprogress-completed`, {
+      const response = await fetch(`${API_BASE_URL}/assessments/${id}/mark-all-inprogress-completed`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -223,7 +224,7 @@ const AssessmentDetails = () => {
 
   const handleMarkAllInProgressResume = async () => {
     try {
-      const response = await fetch(`http://localhost:4000/api/assessments/${id}/mark-all-inprogress-resume`, {
+      const response = await fetch(`${API_BASE_URL}/assessments/${id}/mark-all-inprogress-resume`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -246,7 +247,7 @@ const AssessmentDetails = () => {
 
   const handleMarkAllCompletedResume = async () => {
     try {
-      const response = await fetch(`http://localhost:4000/api/assessments/${id}/mark-all-completed-resume`, {
+      const response = await fetch(`${API_BASE_URL}/assessments/${id}/mark-all-completed-resume`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -269,7 +270,7 @@ const AssessmentDetails = () => {
 
   const handleDeleteAllAttempts = async () => {
     try {
-      const response = await fetch(`http://localhost:4000/api/assessments/${id}/delete-all-attempts`, {
+      const response = await fetch(`${API_BASE_URL}/assessments/${id}/delete-all-attempts`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
